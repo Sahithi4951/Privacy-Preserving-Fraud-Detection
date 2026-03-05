@@ -9,7 +9,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.metrics import f1_score, recall_score, precision_score, roc_auc_score, average_precision_score, confusion_matrix
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from imblearn.over_sampling import SMOTE
 
 
 data = pd.read_csv("C:/Users/bashe/Downloads/archive (4)/spam.csv", encoding='latin1')
@@ -52,21 +55,39 @@ y = data['label']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 X_train_tfidf = vectorizer.fit_transform(X_train)
 X_test_tfidf = vectorizer.transform(X_test)
-model = MultinomialNB()
-model.fit(X_train_tfidf, y_train)
 
-# Creating the user input
-y_pred = model.predict(X_test_tfidf)
-message = input("Enter your message here:")
-cleaned = clean_text(message)
-X_input = vectorizer.transform([cleaned])
-pred = model.predict(X_input)[0]
-if pred==1:
-     print("🚨 This message is SPAM!")
-else:
-    print("💌 This message is HAM (not spam).")
+rf = RandomForestClassifier(
+    n_estimators=100,
+    random_state=42,
+    class_weight={0:1, 1:10}
+)
 
-# printing the accuaray, Confusion matrix and Classification report
-print("Accuracy:", accuracy_score(y_test, y_pred))
-print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred))
-print("\nClassification Report:\n", classification_report(y_test, y_pred))
+lr = LogisticRegression(
+    class_weight="balanced",
+    max_iter=1000
+)
+
+
+def evaluate_model(model, X_train, y_train, X_test, y_test):
+    model.fit(X_train, y_train)
+    pred = model.predict(X_test)
+    probs = model.predict_proba(X_test)[:,1]
+
+    threshold = 0.4
+    custom_pred = (probs > threshold).astype(int)
+
+    return {
+        "Threshold": threshold,
+        "Confusion-Matrix" : confusion_matrix(y_test, custom_pred), 
+        "Recall": recall_score(y_test, custom_pred),
+        "Precision": precision_score(y_test, custom_pred),
+        "F1": f1_score(y_test, custom_pred),
+        "ROC-AUC": roc_auc_score(y_test, probs),
+        "PR-AUC" : average_precision_score(y_test,probs)
+    }
+
+oversampler = SMOTE(random_state=42) 
+X_train_resampled, y_train_resampled = oversampler.fit_resample(X_train_tfidf, y_train)
+
+print("Random Forest:", evaluate_model(rf, X_train_resampled, y_train_resampled , X_test_tfidf, y_test)) 
+print("Logistic Regression:", evaluate_model(lr, X_train_resampled, y_train_resampled , X_test_tfidf, y_test))
