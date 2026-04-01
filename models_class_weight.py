@@ -14,7 +14,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
 
-data = pd.read_csv(r"C:\Users\bashe\Downloads\archive (5)\creditcard.csv", encoding='latin1')
+data = pd.read_csv("C:/Users/bashe/Downloads/archive (4)/spam.csv", encoding='latin1')
 
 # Renaming the columnsṇ
 data = data.rename(columns = { "v1" : "label" , "v2" : "message"})
