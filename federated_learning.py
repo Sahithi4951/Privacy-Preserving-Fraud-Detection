@@ -12,7 +12,7 @@ from sklearn.metrics import f1_score, recall_score, precision_score, roc_auc_sco
 import torch 
 import torch.nn as nn
 
-data = pd.read_csv("C:/Users/bashe/Downloads/archive (4)/spam.csv", encoding='latin1')
+data = pd.read_csv(r"C:\Users\bashe\Downloads\archive (5)\creditcard.csv", encoding='latin1')
 
 data = data.rename(columns = { "v1" : "label" , "v2" : "message"})
 
